@@ -194,7 +194,7 @@ class InvNet(object):
         nbins = tf.shape(gmeans)[0]
         kmatT = tf.transpose(tf.reshape(kmat, (batchsize_per_temperature, ntemperatures, nbins)), perm=(1, 0, 2))
         histogram = tf.reduce_mean(kmatT, axis=1)
-        entropies = tf.reduce_sum(tf.log(histogram), axis=1)
+        entropies = tf.reduce_sum(tf.math.log(histogram), axis=1)
         return tf.reduce_mean(entropies)
 
     def reg_Jzx_uniform(self):
@@ -420,7 +420,7 @@ class EnergyInvNet(InvNet):
         z = self.input_z
         x = self.output_x
         # compute z energy
-        Ez = self.dim * tf.log(tf.sqrt(temperature_factors)) + tf.reduce_sum(z**2, axis=1) / (2.0 * temperature_factors)
+        Ez = self.dim * tf.math.log(tf.sqrt(temperature_factors)) + tf.reduce_sum(z**2, axis=1) / (2.0 * temperature_factors)
         # compute x energy and regularize
         Ex = self.energy_model.energy_tf(x) / temperature_factors
         Exreg = linlogcut(Ex, high_energy, max_energy, tf=True)
@@ -501,10 +501,10 @@ class EnergyInvNet(InvNet):
         if symmetric:
             arg1 = linlogcut(F2 - F1, 10, 1000, tf=True)
             arg2 = linlogcut(F1 - F2, 10, 1000, tf=True)
-            log_pacc = -tf.log(1 + tf.exp(arg1)) - tf.log(1 + tf.exp(arg2))
+            log_pacc = -tf.math.log(1 + tf.exp(arg1)) - tf.math.log(1 + tf.exp(arg2))
         else:
             arg = linlogcut(F2 - F1, 10, 1000, tf=True)
-            log_pacc = -tf.log(1 + tf.exp(arg))
+            log_pacc = -tf.math.log(1 + tf.exp(arg))
         # mean square distance
         if metric is None:
             return log_pacc
@@ -528,7 +528,7 @@ class EnergyInvNet(InvNet):
         F = Ereg - H - J
         # acceptance probability
         arg = linlogcut(F[1:] - F[:-1], 10, 1000, tf=True)
-        log_pacc = -tf.log(1 + tf.exp(arg))
+        log_pacc = -tf.math.log(1 + tf.exp(arg))
         # mean square distance
         # log_dist2 = tf.log(tf.reduce_mean((x[1:] - x[:-1])**2, axis=1))
         # complement with 0's

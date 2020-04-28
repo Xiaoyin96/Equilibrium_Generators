@@ -61,70 +61,126 @@ def bar(sampled_a_uab, sampled_b_uba):
     R = np.mean(metropolis_function(sampled_a_uab)) / np.mean(metropolis_function(sampled_b_uba))
     return -np.log(R)
 
-def free_energy_bootstrap(D, bins=100, range=None, log_weights=None, bias=None, temperature=1.0,
-                          nbootstrap=100, align_bins=None):
+
+def free_energy_bootstrap(D, l, r, n, sample=100, weights=None, bias=None, temperature=1.0):
     """ Bootstrapped free energy calculation
-
     If D is a single array, bootstraps by sample. If D is a list of arrays, bootstraps by trajectories
-
     Parameters
     ----------
     D : array of list of arrays
         Samples in the coordinate in which we compute the free energy
-    bins : int
-        Number of bins
-    range : None or (float, float)
-        value range for bins, if not given will be chosen by min and max values of D
-    nbootstrap : int
+    l : float
+        leftmost bin boundary
+    r : float
+        rightmost bin boundary
+    n : int
+        number of bins
+    sample : int
         number of bootstraps
-    log_weights : None or arrays matching D
+    weights : None or arrays matching D
         sample weights
     bias : function
         if not None, the given bias will be removed.
-    align_bins : None or indices
-        if not None, will shift samples to align at the given bins indices
-
     Returns
     -------
     bin_means : array((nbins,))
         mean positions of bins
     Es : array((sample, nbins))
         for each bootstrap the free energies of bins.
-
     """
-    if range is None:
-        range = (np.min(D), np.max(D))
-    bin_edges = None
+    bins = np.linspace(l, r, n)
     Es = []
+    I = np.arange(len(D))
     by_traj = isinstance(D, list)
-    for _ in np.arange(nbootstrap):
-        Isel = np.random.choice(len(D), size=len(D), replace=True)
+    for s in range(sample):
+        Isel = np.random.choice(I, size=len(D), replace=True)
         if by_traj:
             Dsample = np.concatenate([D[i] for i in Isel])
             Wsample = None
-            if log_weights is not None:
-                log_Wsample = np.concatenate([log_weights[i] for i in Isel])
-                Wsample = np.exp(log_Wsample - log_Wsample.max())
-            Psample, bin_edges = np.histogram(Dsample, bins=bins, range=range, weights=Wsample, density=True)
+            if weights is not None:
+                Wsample = np.concatenate([weights[i] for i in Isel])
+            Psample, _ = np.histogram(Dsample, bins=bins, weights=Wsample, density=True)
         else:
             Dsample = D[Isel]
             Wsample = None
-            if log_weights is not None:
-                log_Wsample = log_weights[Isel]
-                Wsample = np.exp(log_Wsample - log_Wsample.max())
-            Psample, bin_edges = np.histogram(Dsample, bins=bins, range=range, weights=Wsample, density=True)
-        E = -np.log(Psample)
-        if align_bins is not None:
-            E -= E[align_bins].mean()
-        Es.append(E)
+            if weights is not None:
+                Wsample = weights[Isel]
+            Psample, _ = np.histogram(Dsample, bins=bins, weights=Wsample, density=True)
+        Es.append(-np.log(Psample))
     Es = np.vstack(Es)
-    bin_means = 0.5 * (bin_edges[:-1] + bin_edges[1:])
+    Es -= Es.mean(axis=0).min()
+    bin_means = 0.5 * (bins[:-1] + bins[1:])
 
     if bias is not None:
         B = bias(bin_means) / temperature
         Es -= B
 
-    return bin_means, Es# / temperature
+    return bin_means, Es #/ temperature
+
+# def free_energy_bootstrap(D, bins=100, range=None, log_weights=None, bias=None, temperature=1.0,
+#                           nbootstrap=100, align_bins=None):
+#     """ Bootstrapped free energy calculation
+
+#     If D is a single array, bootstraps by sample. If D is a list of arrays, bootstraps by trajectories
+
+#     Parameters
+#     ----------
+#     D : array of list of arrays
+#         Samples in the coordinate in which we compute the free energy
+#     bins : int
+#         Number of bins
+#     range : None or (float, float)
+#         value range for bins, if not given will be chosen by min and max values of D
+#     nbootstrap : int
+#         number of bootstraps
+#     log_weights : None or arrays matching D
+#         sample weights
+#     bias : function
+#         if not None, the given bias will be removed.
+#     align_bins : None or indices
+#         if not None, will shift samples to align at the given bins indices
+
+#     Returns
+#     -------
+#     bin_means : array((nbins,))
+#         mean positions of bins
+#     Es : array((sample, nbins))
+#         for each bootstrap the free energies of bins.
+
+#     """
+#     if range is None:
+#         range = (np.min(D), np.max(D))
+#     bin_edges = None
+#     Es = []
+#     by_traj = isinstance(D, list)
+#     for _ in np.arange(nbootstrap):
+#         Isel = np.random.choice(len(D), size=len(D), replace=True)
+#         if by_traj:
+#             Dsample = np.concatenate([D[i] for i in Isel])
+#             Wsample = None
+#             if log_weights is not None:
+#                 log_Wsample = np.concatenate([log_weights[i] for i in Isel])
+#                 Wsample = np.exp(log_Wsample - log_Wsample.max())
+#             Psample, bin_edges = np.histogram(Dsample, bins=bins, range=range, weights=Wsample, density=True)
+#         else:
+#             Dsample = D[Isel]
+#             Wsample = None
+#             if log_weights is not None:
+#                 log_Wsample = log_weights[Isel]
+#                 Wsample = np.exp(log_Wsample - log_Wsample.max())
+#             Psample, bin_edges = np.histogram(Dsample, bins=bins, range=range, weights=Wsample, density=True)
+#         E = -np.log(Psample)
+#         if align_bins is not None:
+#             E -= E[align_bins].mean()
+#         Es.append(E)
+#     Es = np.vstack(Es)
+#     bin_means = 0.5 * (bin_edges[:-1] + bin_edges[1:])
+
+#     if bias is not None:
+#         B = bias(bin_means) / temperature
+#         Es -= B
+
+#     return bin_means, Es# / temperature
 
 
 def free_energy_bootstrap_2BGs(bg1, bg2, nsamples, nbootstrap, temperature=1.0, verbose=False):
