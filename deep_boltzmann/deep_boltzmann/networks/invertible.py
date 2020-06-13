@@ -168,7 +168,7 @@ class InvNet(object):
         return ll
 
     def log_likelihood_z_cauchy(self, scale=1.0):
-        return -tf.reduce_sum(tf.log(1 + (self.output_z / scale)**2), axis=1)
+        return -tf.reduce_sum(tf.math.log(1 + (self.output_z / scale)**2), axis=1)
 
     def rc_entropy(self, rc_func, gmeans, gstd, ntemperatures=1):
         """ Computes the entropy along a 1D reaction coordinate

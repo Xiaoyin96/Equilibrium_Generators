@@ -61,7 +61,6 @@ def bar(sampled_a_uab, sampled_b_uba):
     R = np.mean(metropolis_function(sampled_a_uab)) / np.mean(metropolis_function(sampled_b_uba))
     return -np.log(R)
 
-
 def free_energy_bootstrap(D, l, r, n, sample=100, weights=None, bias=None, temperature=1.0):
     """ Bootstrapped free energy calculation
     If D is a single array, bootstraps by sample. If D is a list of arrays, bootstraps by trajectories
@@ -115,7 +114,8 @@ def free_energy_bootstrap(D, l, r, n, sample=100, weights=None, bias=None, tempe
         B = bias(bin_means) / temperature
         Es -= B
 
-    return bin_means, Es #/ temperature
+    return bin_means, Es# / temperature
+
 
 # def free_energy_bootstrap(D, bins=100, range=None, log_weights=None, bias=None, temperature=1.0,
 #                           nbootstrap=100, align_bins=None):

@@ -57,7 +57,7 @@ def logreg(x, a=0.001, tf=False):
         return _logreg_np(x, a=a)
 
 def _logreg_tf(x, a=0.001):
-    logx = tf.where(x > a, tf.log(x), tf.log(a) - (a-x))
+    logx = tf.where(x > a, tf.math.log(x), tf.math.log(a) - (a-x))
     return logx
 def _logreg_np(x, a=0.001):
     raise NotImplementedError('Numpy version not yet implemented.')
